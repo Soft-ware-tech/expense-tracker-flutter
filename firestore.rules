@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Each expense document must carry the uid of the user who owns it.
+    // Users can only read/write their own expenses - never another user's.
+    match /expenses/{expenseId} {
+      allow read, update, delete: if request.auth != null
+                                   && request.auth.uid == resource.data.userId;
+
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Each user's monthly budget is stored at budgets/{uid}, so the doc ID
+    // itself is the check: a user can only ever read/write their own budget.
+    match /budgets/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
